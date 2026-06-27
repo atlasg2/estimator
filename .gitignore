@@ -1,0 +1,19 @@
+
+# Scraped NOLA plan PDFs (large, not committed)
+data/nola/
+
+# AWS RDS master password (never commit)
+.rds-password
+
+# throwaway render/spike outputs
+spike_output/
+**/_preview/
+**/_scan/
+_view.png
+
+# RDS runtime files (endpoint/sg are env-specific; password is secret)
+.rds-*
+
+# python build artifacts
+__pycache__/
+*.pyc
