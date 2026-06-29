@@ -6,7 +6,7 @@ Returns, per page: rendered PNG bytes, text items (+coords), vector items
 (+coords), an overlay PNG, and a summary that includes the coordinate transform
 AND quality/confidence flags (so we always know when a page is NOT trustworthy).
 """
-import io
+import io, time
 import fitz
 from PIL import Image, ImageDraw
 
@@ -68,12 +68,10 @@ def extract_vectors(page, mat, page_number, hard_cap=HARD_CAP):
                 geom = [[p.x, p.y] for p in (item[1], item[2], item[3], item[4])]
             else:
                 continue
-            geom_px = [[round((fitz.Point(x, y) * mat).x, 1),
-                        round((fitz.Point(x, y) * mat).y, 1)] for x, y in geom]
             out.append({
                 "entity_type": etype, "path_index": pi, "item_index": ii,
                 "geometry_pdf": [[round(x, 2), round(y, 2)] for x, y in geom],
-                "geometry_px": geom_px, "stroke_width": width,
+                "stroke_width": width,
                 "color": stroke, "fill_color": fill,
                 "dash_pattern": dashes if dashes and dashes != "[] 0" else None,
                 "is_closed": path.get("closePath", False),
@@ -86,11 +84,12 @@ def extract_vectors(page, mat, page_number, hard_cap=HARD_CAP):
     return out, counts, False
 
 
-def build_overlay(png_bytes, text_items, vec_items, max_vectors=HARD_CAP):
+def build_overlay(png_bytes, text_items, vec_items, mat, max_vectors=HARD_CAP):
+    """Derive pixel coords on demand from stored geometry_pdf + the transform."""
     img = Image.open(io.BytesIO(png_bytes)).convert("RGB")
     dr = ImageDraw.Draw(img)
     for v in vec_items[:max_vectors]:
-        g = v["geometry_px"]
+        g = [tuple(fitz.Point(x, y) * mat) for x, y in v["geometry_pdf"]]
         if v["entity_type"] in ("rect", "quad"):
             dr.line(g + [g[0]], fill=(220, 0, 0), width=2)
         elif len(g) >= 2:
@@ -122,12 +121,21 @@ def extract_page(page, page_number, render_dpi=150, hard_cap=HARD_CAP,
     for spot-checks."""
     zoom = render_dpi / 72.0
     mat = fitz.Matrix(zoom, zoom)
+    timings = {}
+    t = time.perf_counter()
     pix = page.get_pixmap(matrix=mat)
     page_png = pix.tobytes("png")
+    timings["render_seconds"] = round(time.perf_counter() - t, 3)
 
+    t = time.perf_counter()
     text_items = extract_text(page, mat, page_number)
+    timings["text_extract_seconds"] = round(time.perf_counter() - t, 3)
+
+    t = time.perf_counter()
     vec_items, counts, truncated = extract_vectors(page, mat, page_number, hard_cap)
-    overlay_png = build_overlay(page_png, text_items, vec_items, max_overlay_vectors) if make_overlay else None
+    timings["vector_extract_seconds"] = round(time.perf_counter() - t, 3)
+
+    overlay_png = build_overlay(page_png, text_items, vec_items, mat, max_overlay_vectors) if make_overlay else None
 
     full_text = page.get_text("text")
     weird = sum(1 for ch in full_text if ord(ch) == 0xFFFD or (ord(ch) < 32 and ch not in "\n\r\t"))
@@ -160,4 +168,5 @@ def extract_page(page, page_number, render_dpi=150, hard_cap=HARD_CAP,
     return {
         "page_png": page_png, "overlay_png": overlay_png,
         "text_items": text_items, "vec_items": vec_items, "summary": summary,
+        "timings": timings,
     }

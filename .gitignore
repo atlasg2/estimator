@@ -17,3 +17,13 @@ _view.png
 # python build artifacts
 __pycache__/
 *.pyc
+
+.ec2-instance-id
+*.pem
+.disc-ids
+
+# v1 working data
+data/
+.ec2-ip
+.disc-ips
+.stored2/
