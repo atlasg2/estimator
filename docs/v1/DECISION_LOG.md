@@ -35,3 +35,15 @@ disqualify `25-26809` (flood-elevation cert). From the existing discovered pool;
 deep-reviewed (validate v3 fixes the under/over-call).
 **Why:** Archetype variety, manageable size, reuse existing evidence.
 **Relabel:** N/A.
+
+### 2026-06-29 — Dataset must include rejects (negatives), not only keeps; extraction depth varies
+**What:** The verified dataset deliberately includes a real share of `disqualify` projects (target ≈ ⅓
+reject / ⅔ keep, calibrate), labeled at project + doc + a sample of pages (`not_flooring`). Heavy
+extraction (image+text+vector) runs only on KEEP/process pages; rejects get **light** extraction (page
+text + a rendered image + labels). For the 25 we reuse already-discovered projects (prioritize the 20
+already fully extracted) and re-label them under v3 — no new discovery.
+**Why:** A triage model that only sees good projects can't learn to reject bad ones — it needs
+negatives at both project and page level. Mirrors production (most daily volume is junk). Rejects don't
+need pixel-level vector geometry, so cheap suffices — saves cost. Re-labeling the already-extracted 20
+also upgrades their weak v1/v2 labels to trusted v3.
+**Relabel:** Re-label the chosen already-discovered projects under v3 (was: weak v1/v2).

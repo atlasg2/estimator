@@ -4,9 +4,12 @@
 **Phase 1 · Bootstrap labeling (5 projects) · spec_version v3.0**
 Next action: label project #1 — `24-21892` (fitness) under v3.0, then human review.
 
-## Mission
-Turn messy NOLA building-permit document sets into a **flooring takeoff packet**, automatically, at
-scale. Customer: **Elite Installation** (commercial / fitness / retail flooring).
+## North Star
+End goal: a near-automated **commercial-flooring estimating tool**. Per project the system will:
+ingest → **triage** (is it worth bidding?) → **select the pages that matter** (+ why/importance) →
+*(later models)* extract finishes → square footage → estimate. Customer: **Elite Installation**
+(commercial / fitness / retail flooring).
+**The first model = the triage + page-select brain. All this labeling exists to train it.**
 
 ## V1 = what we're building now
 V1 = a **trained, deployable triage model** that, per project, keeps/disqualifies (with a reason) and
@@ -22,7 +25,10 @@ We are in V1's **labeling stage**: labeling exists only to build V1's training d
 - **Never delete/overwrite** raw PDFs or raw Claude labels. Claude + human labels coexist via `label_source`.
 - **Only `human_reviewed` labels are ground truth.**
 - Secrets are gitignored; the AWS/Supabase creds pasted in chat still need **rotation**.
-- Pushback freely while *planning*; once *executing*, run the agreed play.
+- **Propose adjustments / surface new insights whenever you see a better way.** If something isn't
+  being done the best way (e.g. "we need *bad* examples too, not just good"), say so — don't silently
+  follow. Flag gaps, risks, and better options. Pushback/proposals are welcome while *planning*; once
+  *executing*, run the agreed play.
 
 ## The doc system
 - **Living docs** (edit in place — always current): `docs/v1/V1_SPEC.md`, `V1_PHASE_PLAN.md`,
