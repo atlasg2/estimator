@@ -6,9 +6,9 @@ Living doc — the gates and milestones. Current phase is mirrored in `CLAUDE.md
 
 | Phase | What | Gate to advance |
 |---|---|---|
-| **1 — Bootstrap** *(NOW)* | 5 projects hand-labeled + human-reviewed under v3.0; refine the spec | Bootstrap report accepted → lock v3.0 or bump v3.1 |
-| **2 — Dataset** | 25 projects labeled + verified; split **15 train / 5 val / 5 test** by whole project, stratified so each split has finish-rich projects | 25 verified, split frozen |
-| **3 — First model + benchmark** | Train first model (predicts page_usefulness + page_role + confidence); run the **blind agent** vs human truth; build the labeler agent + skills | Benchmark measured on val/test |
+| **1 — Bootstrap** *(NOW)* | 5 projects **re-tagged under v4.0** (page-purpose) + human-reviewed; refine the spec | Bootstrap report accepted → lock v4.0 or bump v4.1 |
+| **2 — Dataset** | 25 projects labeled + verified; split **15 train / 5 val / 5 test** by whole project, stratified for tag + representation coverage | 25 verified, split frozen |
+| **3 — First model + benchmark** | Train first model (predicts `useful_for` + `tag_importance` + `page_role` + confidence per page); run the **blind agent** vs human truth; build the labeler agent + skills | Benchmark measured on val/test |
 | **4 — Scale** | 50 → 112, agent labels + humans spot-check | **Trust gate:** finish floor plan recall ≥97%, finish schedule/spec ≥98%, ~0 critical false negatives on held-out |
 | **5 — Deploy** | Serverless triage model in production (ranks/selects pages, retains raw) | — |
 
@@ -42,13 +42,15 @@ Through-line: **recall ≫ precision.** Over-keeping is fine (humans trim); a fa
 - precision may be mediocre (it over-includes); it must never drop flooring
 - practical: cuts a project's review from ~20 min to ~1–2 min with ~0 missed flooring
 
-## Dataset composition (keep + reject — not only keeps)
-A triage model that only sees good projects can't learn to reject bad ones. So the dataset deliberately
-includes **both**:
-- **Keeps** — heavily labeled + **full-extracted** (image + text + vector); train the **page model**
-  (critical/useful/not) and serve as positive triage examples.
-- **Rejects (`disqualify`)** — labeled at project + doc + a sample of pages (`not_flooring`), with only
-  **light extraction** (page text + a rendered image, no heavy vector geometry); the negatives the
-  **project-triage** needs.
-- Target balance ≈ **⅔ keep / ⅓ reject** (calibrate as we go); mirrors production, where most of the
-  daily flood is junk to filter. **Extraction depth: heavy on keeps, light on rejects.**
+## Dataset composition (v4.0 — negatives are intrinsic, per page)
+Under v4.0 the unit is the **page**, and **negatives come for free**: every project is mostly
+non-flooring pages (MEP, structural, civil, RCP, paperwork), each labeled `useful_for: []`. So we
+no longer source whole "reject projects" for training.
+- **Every page of every selected project gets a row** — keeps (tagged) + negatives (`useful_for: []`).
+  Full extraction (image + text + vector) runs on `process` documents.
+- **Select projects for coverage** across the four tags, representation types (digital /
+  vectorized-text / scanned), bundle quality, difficulty, and size — not "best finish schedule."
+  Residential / simple commercial are welcome for `room_layout` + `quantity_takeoff` value.
+- **Hard-negative whole projects** (paperwork-only, sign, facade-only, bad bundles) are kept only as
+  **~5–10% of benchmark sets**, to test that ingestion yields a correctly-empty packet — they test
+  the system, not the page classifier.

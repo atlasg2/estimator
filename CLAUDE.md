@@ -1,15 +1,20 @@
 # CLAUDE.md — read first
 
 ## STATUS
-**Phase 1 · Bootstrap labeling (5 projects) · spec_version v3.0**
-Next action: label project #1 — `24-21892` (fitness) under v3.0, then human review.
+**Phase 1 · Bootstrap labeling · spec_version v4.0 (Page Purpose Classifier) · all 5 re-tagged**
+All 5 re-tagged under v4.0 in `data/v1_labels_v4/` (61 pages, 22 keeps, 39 drops, 6 needs_review);
+v3 labels untouched. Next action: **human-review the 5 (the gate)** → then mobile-UI redo, apply
+migration 005 to RDS, and scale toward 25. Don't scale until review clears.
+Locked spec: `docs/v1/V1_SPEC.md` (v4.0); reasoning trail in `docs/proposals/`.
 
 ## North Star
 End goal: a near-automated **commercial-flooring estimating tool**. Per project the system will:
-ingest → **triage** (is it worth bidding?) → **select the pages that matter** (+ why/importance) →
-*(later models)* extract finishes → square footage → estimate. Customer: **Elite Installation**
+ingest → **select the pages that matter** (by purpose + importance) → *(later models)* extract
+finishes → assign finishes to rooms → square footage → estimate. Customer: **Elite Installation**
 (commercial / fitness / retail flooring).
-**The first model = the triage + page-select brain. All this labeling exists to train it.**
+**The first model = the page-purpose / page-select brain** (classifies + ranks each page by what
+downstream job it serves). "Is it worth bidding?" is an optional rules layer applied *after* the
+model, **not** a learned target. All this labeling exists to train Model 1.
 
 ## V1 = what we're building now
 V1 = a **trained, deployable triage model** that, per project, keeps/disqualifies (with a reason) and
